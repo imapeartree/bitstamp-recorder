@@ -1,0 +1,35 @@
+name: Registra dati Bitstamp
+
+# Cinque giri al giorno da circa 5 ore e 40 minuti: si sovrappongono, così non restano
+# buchi nemmeno quando GitHub avvia un giro in ritardo.
+on:
+  schedule:
+    - cron: "7 0,5,10,15,20 * * *"
+  workflow_dispatch:
+    inputs:
+      chunks:
+        description: "Numero di blocchi da registrare"
+        default: "6"
+      seconds:
+        description: "Durata di ogni blocco in secondi"
+        default: "3420"
+
+permissions:
+  contents: write   # serve solo per caricare i file nelle release
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "websockets>=12,<16"
+      - name: Registra e carica
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHUNKS: ${{ inputs.chunks || '6' }}
+          SECONDS_PER_CHUNK: ${{ inputs.seconds || '3420' }}
+        run: bash record_and_upload.sh
